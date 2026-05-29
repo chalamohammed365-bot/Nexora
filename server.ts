@@ -8,6 +8,7 @@ import path from "path";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
+import cookieParser from "cookie-parser";
 
 dotenv.config();
 
@@ -16,6 +17,7 @@ const PORT = 3000;
 
 // Middleware for body parsing
 app.use(express.json());
+app.use(cookieParser());
 
 // Initialize Gemini Client safely
 let ai: GoogleGenAI | null = null;
@@ -177,6 +179,289 @@ const database = {
   },
   aiGenerationsLog: [] as { id: string; prompt: string; tool: string; result: string; timestamp: string }[]
 };
+
+// ==========================================
+// GOOGLE OAUTH SECURITY MODULE (NEXORA CORE)
+// ==========================================
+
+const CLIENT_ID = process.env.CLIENT_ID || process.env.GOOGLE_CLIENT_ID || "";
+const CLIENT_SECRET = process.env.CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET || "";
+
+const getRedirectUri = () => {
+  const appUrl = process.env.APP_URL;
+  if (appUrl) {
+    const base = appUrl.replace(/\/$/, "");
+    return `${base}/api/auth/google/callback`;
+  }
+  return `http://localhost:3000/api/auth/google/callback`;
+};
+
+// GET currently authenticated user session
+app.get("/api/auth/me", (req, res) => {
+  const userCookie = req.cookies?.nexora_user;
+  if (userCookie) {
+    try {
+      const user = JSON.parse(userCookie);
+      return res.json({ authenticated: true, user });
+    } catch (e) {
+      console.error("Failed to parse user cookie:", e);
+    }
+  }
+  res.json({ authenticated: false });
+});
+
+// POST clear authenticated session
+app.post("/api/auth/logout", (req, res) => {
+  res.clearCookie("nexora_user", {
+    secure: true,
+    sameSite: "none"
+  });
+  res.json({ success: true, message: "Logged out cleanly from Nexora Core." });
+});
+
+// GET OAuth target endpoint URL
+app.get("/api/auth/google/url", (req, res) => {
+  const redirectUri = getRedirectUri();
+  
+  if (!CLIENT_ID) {
+    console.warn("CLIENT_ID missing; providing sandbox auth flow URL.");
+    return res.json({ 
+      url: `/api/auth/simulated-consent?redirect_uri=${encodeURIComponent(redirectUri)}`,
+      simulated: true 
+    });
+  }
+
+  const params = new URLSearchParams({
+    client_id: CLIENT_ID,
+    redirect_uri: redirectUri,
+    response_type: "code",
+    scope: "openid profile email",
+    access_type: "offline",
+    prompt: "consent"
+  });
+
+  const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
+  res.json({ url: authUrl, simulated: false });
+});
+
+// GET Simulated OAuth Sandbox Consent Screen
+app.get("/api/auth/simulated-consent", (req, res) => {
+  const { redirect_uri } = req.query;
+  res.send(`
+    <html>
+      <head>
+        <title>Nexora Cyber-Simulated Authenticator</title>
+        <style>
+          body {
+            background-color: #050510;
+            color: #d1d5db;
+            font-family: 'Inter', system-ui, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            padding: 16px;
+          }
+          .card {
+            background: rgba(13, 13, 35, 0.45);
+            border: 1px solid rgba(139, 92, 246, 0.25);
+            border-radius: 20px;
+            padding: 32px;
+            max-width: 420px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 0 30px rgba(139, 92, 246, 0.15);
+            backdrop-filter: blur(10px);
+          }
+          .title {
+            color: #ffffff;
+            font-weight: 800;
+            font-size: 20px;
+            margin-bottom: 8px;
+            letter-spacing: 0.05em;
+          }
+          .subtitle {
+            color: #a855f7;
+            font-size: 13px;
+            font-family: monospace;
+            margin-bottom: 24px;
+          }
+          .desc {
+            color: #9ca3af;
+            font-size: 14px;
+            line-height: 1.5;
+            margin-bottom: 28px;
+          }
+          .btn-google {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            background: linear-gradient(135deg, #6d28d9 0%, #db2777 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.2s ease;
+            box-shadow: 0 0 15px rgba(139, 92, 246, 0.3);
+          }
+          .btn-google:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 25px rgba(219, 39, 119, 0.4);
+          }
+          .footer {
+            color: #4b5563;
+            font-size: 11px;
+            margin-top: 24px;
+            font-family: monospace;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="card">
+          <div style="font-size: 40px; margin-bottom: 16px;">🌌</div>
+          <div class="title">NEXORA QUANTUM SIGN-IN</div>
+          <div class="subtitle">SIMULATED NEURAL OAUTH NODE</div>
+          <p class="desc">
+            You are operating in the Nexora Sandbox environment. We will authenticate your session with a cosmic developer identity securely.
+          </p>
+          <button class="btn-google" onclick="location.href='${redirect_uri}?code=simulated_cyber_code'">
+            Authorize Dev Session
+          </button>
+          <div class="footer">NEXORA_SECURE_TUNNEL_STATE: READY</div>
+        </div>
+      </body>
+    </html>
+  `);
+});
+
+// GET OAuth redirect callback
+app.get("/api/auth/google/callback", async (req, res) => {
+  const { code } = req.query;
+  if (!code) {
+    return res.status(400).send("Authorization code missing.");
+  }
+
+  try {
+    const redirectUri = getRedirectUri();
+    
+    // Fallback if not configured: If CLIENT_ID/CLIENT_SECRET is missing, we can simulate successful auth for a premium demo experience!
+    if (!CLIENT_ID || !CLIENT_SECRET) {
+      console.warn("CLIENT_ID or CLIENT_SECRET missing. Simulating OAuth callback user details.");
+      const demoUser = {
+        id: "demo-user-123",
+        name: "Cybernetic Specialist",
+        email: "specialist@nexora.network",
+        avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150"
+      };
+      res.cookie("nexora_user", JSON.stringify(demoUser), {
+        maxAge: 24 * 60 * 60 * 1000,
+        secure: true,
+        sameSite: "none",
+        httpOnly: true
+      });
+      return res.send(`
+        <html>
+          <body style="background: #050510; color: #a855f7; font-family: monospace; text-align: center; padding-top: 100px;">
+            <h1 style="color: #ffffff;">Nexora Sandbox Authentication</h1>
+            <p>Verification signatures validated cleanly...</p>
+            <script>
+              if (window.opener) {
+                window.opener.postMessage({ type: 'OAUTH_AUTH_SUCCESS' }, '*');
+                setTimeout(() => window.close(), 500);
+              } else {
+                window.location.href = '/';
+              }
+            </script>
+          </body>
+        </html>
+      `);
+    }
+
+    const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        code: code as string,
+        client_id: CLIENT_ID,
+        client_secret: CLIENT_SECRET,
+        redirect_uri: redirectUri,
+        grant_type: "authorization_code"
+      })
+    });
+
+    if (!tokenResponse.ok) {
+      const errText = await tokenResponse.text();
+      throw new Error(`Google Token API returned errors: ${errText}`);
+    }
+
+    const tokens = await tokenResponse.json() as any;
+    const accessToken = tokens.access_token;
+
+    // Fetch user details
+    const userInfoResponse = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+
+    if (!userInfoResponse.ok) {
+      throw new Error(`Google UserInfo API returned error status: ${userInfoResponse.status}`);
+    }
+
+    const userInfo = await userInfoResponse.json() as any;
+    
+    const userObject = {
+      id: userInfo.sub,
+      name: userInfo.name || userInfo.given_name || "Nexora Operator",
+      email: userInfo.email,
+      avatar: userInfo.picture || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150"
+    };
+
+    // Store in cookie
+    res.cookie("nexora_user", JSON.stringify(userObject), {
+      maxAge: 24 * 60 * 60 * 1000,
+      secure: true,
+      sameSite: "none", // Since we run inside iframe, SameSite=None + Secure is mandatory!
+      httpOnly: true
+    });
+
+    // Send postMessage to signal client
+    res.send(`
+      <html>
+        <body style="background: #050510; color: #a855f7; font-family: monospace; text-align: center; padding-top: 100px;">
+          <h1 style="color: #ffffff;">Nexora Core Network</h1>
+          <p>Google OAuth verification success. Synchronizing biometric logs...</p>
+          <script>
+            if (window.opener) {
+              window.opener.postMessage({ type: 'OAUTH_AUTH_SUCCESS' }, '*');
+              setTimeout(() => {
+                window.close();
+              }, 500);
+            } else {
+              window.location.href = '/';
+            }
+          </script>
+        </body>
+      </html>
+    `);
+
+  } catch (error: any) {
+    console.error("OAuth token exchange / userInfo fetch error:", error);
+    res.status(500).send(`
+      <html>
+        <body style="background: #050510; color: #ef4444; font-family: monospace; text-align: center; padding-top: 100px;">
+          <h1>Authentication Failure</h1>
+          <p>${error.message || "Failed to trade Google credentials."}</p>
+          <button onclick="window.close()" style="background: #3b0764; border: 1px solid #a855f7; color: white; padding: 8px 16px; border-radius: 8px; cursor: pointer;">Close Window</button>
+        </body>
+      </html>
+    `);
+  }
+});
 
 // GET blog posts
 app.get("/api/blogs", (req, res) => {

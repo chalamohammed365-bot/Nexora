@@ -6,7 +6,8 @@
 import React, { useState, useEffect } from "react";
 import { 
   Cpu, Bell, ShieldAlert, BadgeCheck, Check, 
-  Menu, X, Sparkles, ChevronRight, Zap, Target, BookOpen, ShoppingBag 
+  Menu, X, Sparkles, ChevronRight, Zap, Target, BookOpen, ShoppingBag,
+  LogIn, LogOut
 } from "lucide-react";
 
 // Import modular components
@@ -25,6 +26,108 @@ export default function App() {
   const [activePlaygroundTool, setActivePlaygroundTool] = useState("text");
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showBillingModal, setShowBillingModal] = useState(false);
+
+  // Google OAuth User State & Loader Handlers
+  const [user, setUser] = useState<{ id: string; name: string; email: string; avatar: string } | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
+
+  const fetchCurrentUser = async () => {
+    try {
+      const res = await fetch("/api/auth/me");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.authenticated) {
+          setUser(data.user);
+        } else {
+          setUser(null);
+        }
+      }
+    } catch (err) {
+      console.error("Auth me check error:", err);
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCurrentUser();
+  }, []);
+
+  useEffect(() => {
+    const handleOAuthSuccess = (event: MessageEvent) => {
+      const origin = event.origin;
+      if (!origin.endsWith(".run.app") && !origin.includes("localhost")) {
+        return;
+      }
+      if (event.data?.type === "OAUTH_AUTH_SUCCESS") {
+        fetchCurrentUser();
+        setNotifications(prev => [
+          {
+            id: `n-${Date.now()}`,
+            title: "Security Node Connected",
+            body: "Google identity authenticated & authorized. Bio-logs synced successfully.",
+            time: "Just now",
+            read: false
+          },
+          ...prev
+        ]);
+        setUnreadCount(prev => prev + 1);
+      }
+    };
+    window.addEventListener("message", handleOAuthSuccess);
+    return () => window.removeEventListener("message", handleOAuthSuccess);
+  }, []);
+
+  const handleSignIn = async () => {
+    try {
+      const res = await fetch("/api/auth/google/url");
+      if (!res.ok) {
+        throw new Error("Failed to trade auth URLs");
+      }
+      const data = await res.json();
+      
+      const width = 500;
+      const height = 650;
+      const left = window.screenX + (window.outerWidth - width) / 2;
+      const top = window.screenY + (window.outerHeight - height) / 2;
+      
+      const authWindow = window.open(
+        data.url,
+        "nexora_oauth_popup",
+        `width=${width},height=${height},left=${left},top=${top},status=no,resizable=yes`
+      );
+      
+      if (!authWindow) {
+        alert("Please allow popups to sign in to Nexora.");
+      }
+    } catch (err) {
+      console.error("Sign-in trigger failed:", err);
+    }
+  };
+
+  const handleLogOut = async () => {
+    try {
+      const res = await fetch("/api/auth/logout", { method: "POST" });
+      if (res.ok) {
+        setUser(null);
+        setShowUserDropdown(false);
+        setNotifications(prev => [
+          {
+            id: `n-${Date.now()}`,
+            title: "Identity De-authenticated",
+            body: "Cleared local session and cryptographic keys.",
+            time: "Just now",
+            read: false
+          },
+          ...prev
+        ]);
+        setUnreadCount(prev => prev + 1);
+      }
+    } catch (err) {
+      console.error("Sign-out trigger failed:", err);
+    }
+  };
 
   const [notifications, setNotifications] = useState([
     {
@@ -162,22 +265,65 @@ export default function App() {
               )}
             </div>
 
-            {/* Profile Avatar trigger */}
-            <div className="flex items-center gap-2 border-l border-white/5 pl-4">
-              <div className="relative cursor-pointer">
-                <img
-                  src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=80"
-                  alt="user profile avatar"
-                  className="w-8.5 h-8.5 rounded-xl border border-purple-500/35 object-cover" 
-                  referrerPolicy="no-referrer"
-                />
-                <div className="absolute -bottom-1 -right-1 bg-purple-500 rounded-full p-0.5 border border-black">
-                  <Check className="h-2 w-2 text-white" />
+            {/* Profile Avatar or Connect Google OAuth node */}
+            <div className="flex items-center gap-2 border-l border-white/5 pl-4 relative font-mono">
+              {user ? (
+                <div className="relative">
+                  <button
+                    onClick={() => setShowUserDropdown(!showUserDropdown)}
+                    className="flex items-center gap-2 text-left cursor-pointer group"
+                  >
+                    <div className="relative">
+                      <img
+                        src={user.avatar}
+                        alt="user profile avatar"
+                        className="w-8.5 h-8.5 rounded-xl border border-purple-500/50 object-cover group-hover:border-purple-400 group-hover:shadow-[0_0_10px_rgba(168,85,247,0.4)] transition-all" 
+                        referrerPolicy="no-referrer"
+                      />
+                      <div className="absolute -bottom-1 -right-1 bg-purple-500 rounded-full p-0.5 border border-black">
+                        <Check className="h-2 w-2 text-white" />
+                      </div>
+                    </div>
+                    <span className="hidden lg:block text-xs font-mono font-bold text-gray-300 group-hover:text-white transition-colors">
+                      @{user.name.toLowerCase().replace(/\s+/g, "_")}
+                    </span>
+                  </button>
+
+                  {showUserDropdown && (
+                    <div className="absolute right-0 mt-3.5 w-60 rounded-2xl border border-white/10 bg-[#050512] shadow-[0_15px_40px_rgba(0,0,0,0.8),0_0_20px_rgba(139,92,246,0.15)] p-4 space-y-3.5 animate-fadeIn z-50 text-left">
+                      <div className="border-b border-white/5 pb-2">
+                        <p className="text-xs font-bold text-white leading-tight font-sans truncate">{user.name}</p>
+                        <p className="text-[10px] text-gray-400 font-mono truncate">{user.email}</p>
+                      </div>
+                      <div className="space-y-1 text-xs">
+                        <div className="flex justify-between text-[10px] text-gray-500">
+                          <span>NODE_PERMIT:</span>
+                          <span className="text-pink-500 font-bold font-mono">AUTHORIZED</span>
+                        </div>
+                        <div className="flex justify-between text-[10px] text-gray-500">
+                          <span>SECURE_ID:</span>
+                          <span className="text-cyan-400 font-mono text-[9px] truncate max-w-[100px]">{user.id}</span>
+                        </div>
+                      </div>
+                      <button
+                        onClick={handleLogOut}
+                        className="w-full flex items-center justify-center gap-2 p-2 rounded-xl bg-red-950/20 hover:bg-red-900/30 border border-red-500/20 hover:border-red-500/40 text-red-400 hover:text-red-300 transition-all font-mono text-[10px] uppercase font-bold cursor-pointer"
+                      >
+                        <LogOut className="h-3 w-3" />
+                        Deauthenticate
+                      </button>
+                    </div>
+                  )}
                 </div>
-              </div>
-              <span className="hidden lg:block text-xs font-mono font-bold text-gray-300">
-                @developer
-              </span>
+              ) : (
+                <button
+                  onClick={handleSignIn}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-purple-950/60 via-purple-900/45 to-[#0b0c20] border border-purple-500/30 hover:border-purple-400 text-purple-300 hover:text-white hover:shadow-[0_0_15px_rgba(168,85,247,0.25)] transition-all text-[11px] uppercase tracking-wider font-bold cursor-pointer font-mono"
+                >
+                  <LogIn className="h-3.5 w-3.5 text-pink-400" />
+                  Connect Node
+                </button>
+              )}
             </div>
 
             {/* Mobile Nav toggle button */}
