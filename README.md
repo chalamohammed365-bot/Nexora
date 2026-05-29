@@ -1,6 +1,6 @@
 # 🌌 NEXORA — The Digital Super-App
 
-[![Repository](https://img.shields.io/badge/GitHub-Repository-purple?style=for-the-badge&logo=github&logoColor=white)](https://github.com/chalamohammed365-bot/Nexora.git)
+[![Development](https://img.shields.io/badge/Dev-Nexora_Beta-blue?style=for-the-badge&logo=googlecloud&logoColor=white)](https://ais-dev-7tjndy54gvphjw7huhsstr-15178011269.europe-west2.run.app)
 [![Deployment](https://img.shields.io/badge/Live-Nexora_Platform-cyan?style=for-the-badge&logo=googlecloud&logoColor=white)](https://ais-pre-7tjndy54gvphjw7huhsstr-15178011269.europe-west2.run.app)
 [![Platform](https://img.shields.io/badge/Stack-React_19_|_Express_|_Gemini-pink?style=for-the-badge)](https://ais-pre-7tjndy54gvphjw7huhsstr-15178011269.europe-west2.run.app)
 
@@ -8,9 +8,9 @@
 
 ---
 
-## 🔗 Official Links
-* **GitHub Repository**: [https://github.com/chalamohammed365-bot/Nexora.git](https://github.com/chalamohammed365-bot/Nexora.git)
-* **Live Deployment**: [https://ais-pre-7tjndy54gvphjw7huhsstr-15178011269.europe-west2.run.app](https://ais-pre-7tjndy54gvphjw7huhsstr-15178011269.europe-west2.run.app)
+## 🔗 Official Platform Links
+* **Live Web Application (Production Channel)**: [https://ais-pre-7tjndy54gvphjw7huhsstr-15178011269.europe-west2.run.app](https://ais-pre-7tjndy54gvphjw7huhsstr-15178011269.europe-west2.run.app)
+* **Development Workspace (Beta Channel)**: [https://ais-dev-7tjndy54gvphjw7huhsstr-15178011269.europe-west2.run.app](https://ais-dev-7tjndy54gvphjw7huhsstr-15178011269.europe-west2.run.app)
 
 ---
 
