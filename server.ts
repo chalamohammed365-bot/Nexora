@@ -343,11 +343,27 @@ app.post("/api/gemini/generate", async (req, res) => {
         source: "Gemini 3.5 Neural Core"
       });
     } catch (apiError: any) {
-      console.error("Gemini API call error:", apiError);
+      const errorMsg = apiError?.message || JSON.stringify(apiError);
+      console.warn("Gemini API call warning (falling back to local coprocessor):", errorMsg);
+      
+      const isDenied = errorMsg.toLowerCase().includes("denied") || errorMsg.toLowerCase().includes("403");
+      let fallbackText = getFallbackAiOutput(prompt, toolType);
+      
+      if (isDenied) {
+        fallbackText = `### ⚠️ Nexora Core Notice: Project Access Restricted\n\n` +
+          `Your active Gemini API key/project is reporting a 443/403 access restriction or denial (Status: PERMISSION_DENIED).\n\n` +
+          `#### 🛠️ Resolving Project Access:\n` +
+          `1. Open the **Settings > Secrets** workspace panel in Google AI Studio.\n` +
+          `2. Check that your **GEMINI_API_KEY** environment variable is configured with a valid, working API key from MakerSuite / Google AI Studio.\n` +
+          `3. Alternatively, you can use our offline, sandboxed simulation layer, which continues to respond normally with elite cybernetic templates.\n\n` +
+          `---\n\n` +
+          `### 🤖 Nexora Local Cyber-Co-Processor Output:\n\n` + fallbackText;
+      }
+
       // Fallback gracefully without throwing 500, informing client or using fallback simulation
       return res.json({
         success: true,
-        result: getFallbackAiOutput(prompt, toolType),
+        result: fallbackText,
         source: "Nexora Local Cyber-Co-Processor",
         warning: "Running in offline co-processing mode due to network payload restrictions."
       });
@@ -400,8 +416,10 @@ app.post("/api/gemini/generate-image-prompts", async (req, res) => {
         contents: `Given the user's basic image description: "${prompt}", create a highly detailed, cinematic sci-fi/cyberpunk prompt description for rendering software. Keep it under 80 words.`,
       });
       descriptiveDetails = response.text || descriptiveDetails;
-    } catch {
-      // Keep static default
+    } catch (err: any) {
+      console.warn("Gemini dynamic image prompt expansion warning (falling back):", err?.message || err);
+      // Fallback gracefully without throwing, optionally indicating system co-processor fallback
+      descriptiveDetails = `[Notice: System coprocessor restricted] Designed high-intensity neon visualization of '${prompt}' mapping specular micro-reflections. (Provide a valid GEMINI_API_KEY in Settings to enable real-time dynamic text expansion).`;
     }
   }
 
