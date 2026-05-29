@@ -1,6 +1,5 @@
 # 🌌 NEXORA — The Digital Super-App
 
-[![Repository](https://img.shields.io/badge/GitHub-Repository-purple?style=for-the-badge&logo=github&logoColor=white)](https://github.com/chalamohammed365-bot/Nexora.git)
 [![Deployment](https://img.shields.io/badge/Live-Nexora_Platform-cyan?style=for-the-badge&logo=googlecloud&logoColor=white)](https://ais-pre-7tjndy54gvphjw7huhsstr-15178011269.europe-west2.run.app)
 [![Platform](https://img.shields.io/badge/Stack-React_19_|_Express_|_Gemini-pink?style=for-the-badge)](https://ais-pre-7tjndy54gvphjw7huhsstr-15178011269.europe-west2.run.app)
 
@@ -8,9 +7,9 @@
 
 ---
 
-## 🔗 Official Codebase & Live App Links
-* **GitHub Repository**: [https://github.com/chalamohammed365-bot/Nexora.git](https://github.com/chalamohammed365-bot/Nexora.git)
-* **Live Deployment**: [https://ais-pre-7tjndy54gvphjw7huhsstr-15178011269.europe-west2.run.app](https://ais-pre-7tjndy54gvphjw7huhsstr-15178011269.europe-west2.run.app)
+## 🔗 Live Application Link
+Explore the live deployment build and experience the distributed super-app interface in real-time:
+👉 **[https://ais-pre-7tjndy54gvphjw7huhsstr-15178011269.europe-west2.run.app](https://ais-pre-7tjndy54gvphjw7huhsstr-15178011269.europe-west2.run.app)**
 
 ---
 
