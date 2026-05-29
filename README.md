@@ -1,16 +1,16 @@
 # 🌌 NEXORA — The Digital Super-App
 
-[![Repository](https://img.shields.io/badge/GitHub-Nexora-purple?style=for-the-badge&logo=github&logoColor=white)](https://github.com/chalamohammed365-bot/Nexora)
-[![Licence](https://img.shields.io/badge/Status-Beta_Active-cyan?style=for-the-badge)](https://github.com/chalamohammed365-bot/Nexora)
-[![Platform](https://img.shields.io/badge/Stack-React_19_|_Express_|_Gemini-pink?style=for-the-badge)](https://github.com/chalamohammed365-bot/Nexora)
+[![Repository](https://img.shields.io/badge/GitHub-Repository-purple?style=for-the-badge&logo=github&logoColor=white)](https://github.com/chalamohammed365-bot/Nexora.git)
+[![Deployment](https://img.shields.io/badge/Live-Nexora_Platform-cyan?style=for-the-badge&logo=googlecloud&logoColor=white)](https://ais-pre-7tjndy54gvphjw7huhsstr-15178011269.europe-west2.run.app)
+[![Platform](https://img.shields.io/badge/Stack-React_19_|_Express_|_Gemini-pink?style=for-the-badge)](https://ais-pre-7tjndy54gvphjw7huhsstr-15178011269.europe-west2.run.app)
 
 > **One platform. Unlimited digital power.** Nexora is a futuristic, immersive, and high-frequency digital workspace consolidating AI-driven automation, high-CTR ad sponsorship, creator monetization networks, distributed social feeds, and digital asset marketplaces into a single, cohesive, high-contrast dashboard.
 
 ---
 
-## 🔗 Official Repository & Live Source
-Access the full code, contribute, and stay updated with the ecosystem:
-👉 **[https://github.com/chalamohammed365-bot/Nexora](https://github.com/chalamohammed365-bot/Nexora)**
+## 🔗 Official Codebase & Live App Links
+* **GitHub Repository**: [https://github.com/chalamohammed365-bot/Nexora.git](https://github.com/chalamohammed365-bot/Nexora.git)
+* **Live Deployment**: [https://ais-pre-7tjndy54gvphjw7huhsstr-15178011269.europe-west2.run.app](https://ais-pre-7tjndy54gvphjw7huhsstr-15178011269.europe-west2.run.app)
 
 ---
 
@@ -56,26 +56,28 @@ Nexora is engineered on a resilient full-stack architecture combining a robust b
 * **Backend**: Node.js, Express, TypeScript, Google GenAI SDK (`@google/genai`).
 * **Bundler & Dev Engine**: TSX, Esbuild (compiling to self-contained CJS bundle in production).
 
-### 🚀 Commands & Run Guides
+---
 
-#### 1. Setup Dependencies
+## 🚀 Commands & Run Guides
+
+### 1. Setup Dependencies
 ```bash
 npm install
 ```
 
-#### 2. Launch Local Development
+### 2. Launch Local Development
 Starts both the Express API and the Vite Hot Module Replacement (HMR) server side-by-side using `tsx`:
 ```bash
 npm run dev
 ```
 
-#### 3. Production Build
+### 3. Production Build
 Bundles the frontend using Vite static build and compiles `server.ts` into a fast, compiled CommonJS bundle at `dist/server.cjs` via Esbuild:
 ```bash
 npm run build
 ```
 
-#### 4. Deploy / Production Start
+### 4. Deploy / Production Start
 Launches the standalone bundled file server and API:
 ```bash
 npm run start
@@ -85,7 +87,7 @@ npm run start
 
 ## 🔒 Environment Secrets
 
-Nexora relies on the following environment variable format. Specify it inside your `.env` or settings console:
+Nexora relies on the following environment variable format. Specify it inside your `.env` file:
 ```env
 # The raw API key from Google AI Studio / MakerSuite
 GEMINI_API_KEY=your_key_here
@@ -93,4 +95,4 @@ GEMINI_API_KEY=your_key_here
 
 ---
 
-*Made with 💜 for the Nexora Distributed Network. Connect with us at [https://github.com/chalamohammed365-bot/Nexora](https://github.com/chalamohammed365-bot/Nexora).*
+*Made with 💜 for the Nexora Distributed Network.*
